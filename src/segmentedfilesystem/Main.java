@@ -9,7 +9,7 @@ public class Main {
         String server = "localhost";
         // CHANGE THIS DEFAULT PORT TO THE PORT NUMBER PROVIDED
         // BY THE INSTRUCTOR.
-        int port = 0;
+        int port = 6014;
         
         if (args.length >= 1) {
             server = args[0];
@@ -20,6 +20,8 @@ public class Main {
 
         FileRetriever fileRetriever = new FileRetriever(server, port);
         fileRetriever.downloadFiles();
-    }
 
+        // Byte potato = new Byte("112");
+        // System.out.println(potato.byteValue());
+    }
 }
