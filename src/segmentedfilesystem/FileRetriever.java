@@ -45,14 +45,27 @@ public class FileRetriever {
         DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length, server, port);
         System.out.println("Sending packet....");
         socket.send(packet);
+        PackageManager potato = new PackageManager();
 
+        while(potato.index < PackageManager.totalPackets){
         packet = new DatagramPacket(receiveBuf, receiveBuf.length);
         socket.receive(packet);
-        System.out.println("Something received!");
+        potato.insertPacket(packet);
+        //System.out.println("Something received!");
+        }
+        System.out.println("Organization start");
+        potato.packetOrginizer();
+        System.out.println("Organization end");
+        for (int i = 0; i < 256; i++) {
+                for (int j = 0; j < potato.orgPacket[i].size(); j++) {
+                        System.out.println(potato.orgPacket[i].get(j));
+                }
+        }
+
         //String received = new String(packet.getData(), 0, packet.getLength());
         
-        System.out.println(3&packet.getData()[0]);
-        //System.out.println("The big bean: " + received);
+        
+        //System.out.println("The big bean: " + );
         } catch (Exception e){
                 System.err.println("Exception: " + e);
         }
