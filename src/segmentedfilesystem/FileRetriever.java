@@ -47,20 +47,26 @@ public class FileRetriever {
         socket.send(packet);
         PackageManager potato = new PackageManager();
 
-        while(potato.index < PackageManager.totalPackets){
+        while(potato.packets.size() < PackageManager.totalPackets){
         packet = new DatagramPacket(receiveBuf, receiveBuf.length);
         socket.receive(packet);
         potato.insertPacket(packet);
         //System.out.println("Something received!");
         }
         System.out.println("Organization start");
-        potato.packetOrginizer();
+        potato.fileOrganizer();
         System.out.println("Organization end");
-        for (int i = 0; i < 256; i++) {
-                for (int j = 0; j < potato.orgPacket[i].size(); j++) {
-                        System.out.println(potato.orgPacket[i].get(j));
-                }
-        }
+        potato.packetOrganizer();
+        // for (int i = 0; i < potato.orgPacket.size(); i++) {
+        //         if(potato.orgPacket.get(i) != null){
+        //         for (int j = 0; j < potato.orgPacket.get(i).size(); j++) {
+                        
+        //                 System.out.write(potato.orgPacket.get(i).get(j).data);
+        //                 System.out.flush();
+        //                 }
+        //         }
+        //         System.out.flush();
+        // }
 
         //String received = new String(packet.getData(), 0, packet.getLength());
         
