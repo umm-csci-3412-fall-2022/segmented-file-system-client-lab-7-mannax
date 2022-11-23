@@ -1,4 +1,8 @@
 package segmentedfilesystem;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.PrintStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -43,35 +47,27 @@ public class FileRetriever {
         try {
         DatagramSocket socket = new DatagramSocket();
         DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length, server, port);
-        System.out.println("Sending packet....");
         socket.send(packet);
         PackageManager potato = new PackageManager();
 
-        while(potato.packets.size() < PackageManager.totalPackets){
+        while(potato.packets.size() < PackageManager.totalPackets){ // I think this is still inaccurate
         packet = new DatagramPacket(receiveBuf, receiveBuf.length);
         socket.receive(packet);
         potato.insertPacket(packet);
-        //System.out.println("Something received!");
         }
-        System.out.println("Organization start");
+        socket.close();
         potato.fileOrganizer();
-        System.out.println("Organization end");
         potato.packetOrganizer();
-        // for (int i = 0; i < potato.orgPacket.size(); i++) {
-        //         if(potato.orgPacket.get(i) != null){
-        //         for (int j = 0; j < potato.orgPacket.get(i).size(); j++) {
-                        
-        //                 System.out.write(potato.orgPacket.get(i).get(j).data);
-        //                 System.out.flush();
-        //                 }
-        //         }
-        //         System.out.flush();
-        // }
-
-        //String received = new String(packet.getData(), 0, packet.getLength());
-        
-        
-        //System.out.println("The big bean: " + );
+        for (int i = 0; i < potato.orgPacket.size(); i++) {
+                File newFile = new File(new String(potato.orgPacket.get(i).get(0).data, 0, potato.orgPacket.get(i).get(0).data.length));
+                //File newFile = new File(potato.orgPacket.get(i).get(0).fileName);
+                System.setOut(new PrintStream(newFile));
+                for (int j = 1; j < potato.orgPacket.get(i).size(); j++) {
+                        System.out.write(potato.orgPacket.get(i).get(j).data);
+                        System.out.flush();
+                        }
+                System.out.flush();
+        }
         } catch (Exception e){
                 System.err.println("Exception: " + e);
         }
