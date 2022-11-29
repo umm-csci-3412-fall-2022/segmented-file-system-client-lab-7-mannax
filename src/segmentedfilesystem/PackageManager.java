@@ -1,24 +1,31 @@
 package segmentedfilesystem;
 
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 
+import javax.swing.event.SwingPropertyChangeSupport;
+import javax.xml.transform.Templates;
+
 public class PackageManager {
-    static int totalPackets = 256;
+    static int totalPackets = 0;
+    static int tempPackets = 0;
+    static int numend = 0;
     ArrayList<packet> packets = new ArrayList<packet>();
     
 
     public void insertPacket(DatagramPacket input){
         //System.out.println(input.getData()[1]);
-        if((1&input.getData()[0]) == 1){ // This is more accurate than 2, odd numbers can have two in it as well
-            packets.add(new dataPacket(input));
+        byte[] packet = input.getData();
+        if((1&packet[0]) == 1){ // This is more accurate than 2, odd numbers can have two in it as well  
+            packets.add(new dataPacket(packet));
         } else {
-            packets.add(new headerPacket(input));
+            //System.out.println(data[0]);
+            packets.add(new headerPacket(packet));
         }
+        // System.out.println("number of end packets : " + numend);
+        // System.out.println("Number of temp packets : " + tempPackets);
+        // System.out.println("Variable totalPackets : " + totalPackets);
     }
  ArrayList<ArrayList<packet>> orgPacket = new ArrayList<ArrayList<packet>>();
     public void fileOrganizer(){
@@ -47,7 +54,6 @@ public class PackageManager {
         for (ArrayList<packet> arrayList : orgPacket) {
             arrayList.sort(new packetComparator());
         }
-
         for (ArrayList<packet> arrayList : orgPacket) {
             System.out.println("Start of a packet...");
             for (int i = 0; i < arrayList.size(); i++) {
@@ -76,33 +82,43 @@ class packetComparator implements Comparator<packet> {
 class headerPacket extends packet{
     
 
-    headerPacket(DatagramPacket packet){
-        byte[] temp = packet.getData();
-        data = new byte[packet.getLength() - 2];
+    headerPacket(byte[] packet){
+        data = new byte[packet.length - 2];
         int index = 0;
-        for (int i = 2; i < packet.getLength(); ++i){
-            data[index++] = temp[i];
+        for (int i = 2; i < packet.length; ++i){
+            data[index++] = packet[i];
         }
-        FileID = temp[1];
+        FileID = packet[1];
 
-        fileName = new String(data, 0, data.length);
-        System.out.println(fileName);
+        fileName = (new String(data, 0, data.length)).replaceAll("\0", "");
+
+        System.out.println("Name : |" + fileName + "| length : " + fileName.length() + " --------------------------------");
     }
 }
 
 class dataPacket extends packet{
-    dataPacket(DatagramPacket packet){
-        byte[] temp = packet.getData();
-        data = new byte[packet.getLength() - 4];
+    dataPacket(byte[] packet){
         int index = 0;
-        for (int i = 4; i < packet.getLength(); ++i){
-            data[index++] = temp[i];
+        data = new byte[packet.length - 4];
+        for (int i = 4; i < packet.length; ++i){
+            data[index++] = packet[i];
         }
         //data = packet.getData();
-        FileID = temp[1];
-        packetNumber = Byte.toUnsignedInt(temp[2]) + Byte.toUnsignedInt(temp[3]);
+        FileID = packet[1];
+        packetNumber = 256*Byte.toUnsignedInt(packet[2]) + Byte.toUnsignedInt(packet[3]);
         //System.out.println(packetNumber);
-        if((3&packet.getData()[0]) == 3) PackageManager.totalPackets = packetNumber;
+        if((3&packet[0]) == 3) {
+         //   PackageManager.totalPackets = packetNumber;
+         System.out.println(packetNumber);
+         PackageManager.tempPackets += packetNumber + 2;
+         System.out.println("tempPackets : " + PackageManager.tempPackets);
+         System.out.println("totalPackets : " + PackageManager.totalPackets);
+            ++PackageManager.numend;
+            if(PackageManager.numend == 3){
+               PackageManager.totalPackets = PackageManager.tempPackets;
+               System.out.println("totalPackets : " + PackageManager.totalPackets);
+            }
+        }
     }
 
 

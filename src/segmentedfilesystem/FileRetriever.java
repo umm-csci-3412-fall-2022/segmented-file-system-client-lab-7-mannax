@@ -6,6 +6,10 @@ import java.io.PrintStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 
 public class FileRetriever {
@@ -50,19 +54,26 @@ public class FileRetriever {
         socket.send(packet);
         PackageManager potato = new PackageManager();
 
-        while(potato.packets.size() < PackageManager.totalPackets){ // I think this is still inaccurate
+        while(PackageManager.totalPackets == 0 || potato.packets.size() < PackageManager.totalPackets){ // I think this is still inaccurate
         packet = new DatagramPacket(receiveBuf, receiveBuf.length);
         socket.receive(packet);
         potato.insertPacket(packet);
+        receiveBuf = new byte[1028];
         }
         socket.close();
         potato.fileOrganizer();
         potato.packetOrganizer();
         for (int i = 0; i < potato.orgPacket.size(); i++) {
-                File newFile = new File(new String(potato.orgPacket.get(i).get(0).data, 0, potato.orgPacket.get(i).get(0).data.length));
-                //File newFile = new File(potato.orgPacket.get(i).get(0).fileName);
+                ArrayList<packet> dPackets=potato.orgPacket.get(i);
+                String file = dPackets.get(0).fileName;
+                
+                //Path path = Paths.get(file);
+                //new String(dPackets.get(0).data, 0, dPackets.get(0).data.length)
+                //File newFile = new File(new String(potato.orgPacket.get(i).get(0).data, 0, potato.orgPacket.get(i).get(0).data.length));
+                File newFile = new File(file);
                 System.setOut(new PrintStream(newFile));
                 for (int j = 1; j < potato.orgPacket.get(i).size(); j++) {
+                        //Files.write(path, potato.orgPacket.get(i).get(j).data);
                         System.out.write(potato.orgPacket.get(i).get(j).data);
                         System.out.flush();
                         }
