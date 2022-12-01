@@ -4,9 +4,6 @@ import java.net.DatagramPacket;
 import java.util.ArrayList;
 import java.util.Comparator;
 
-import javax.swing.event.SwingPropertyChangeSupport;
-import javax.xml.transform.Templates;
-
 public class PackageManager {
     static int totalPackets = 0;
     static int tempPackets = 0;
@@ -14,29 +11,36 @@ public class PackageManager {
     ArrayList<packet> packets = new ArrayList<packet>();
     
 
+    /**
+     * insertPacket takes a datagrampacket from the server and puts it into the array list of packets
+     * as well as putting it into a class, headerPacket or dataPacket depending on the status bytes.
+     * We assume this is thrown into a while loop in the FileRetriever, which the dataPacket constructor
+     * will update the number of total expected packets when it receives a 3 packets with status 3.
+     * @param input Datapacket received from the server
+     */
     public void insertPacket(DatagramPacket input){
-        //System.out.println(input.getData()[1]);
+        int dataLength = input.getLength();
         byte[] packet = input.getData();
-        if((1&packet[0]) == 1){ // This is more accurate than 2, odd numbers can have two in it as well  
-            packets.add(new dataPacket(packet));
+        if((1&packet[0]) == 1){
+            packets.add(new dataPacket(packet, dataLength));
         } else {
-            //System.out.println(data[0]);
-            packets.add(new headerPacket(packet));
+            packets.add(new headerPacket(packet, dataLength));
         }
-        // System.out.println("number of end packets : " + numend);
-        // System.out.println("Number of temp packets : " + tempPackets);
-        // System.out.println("Variable totalPackets : " + totalPackets);
     }
  ArrayList<ArrayList<packet>> orgPacket = new ArrayList<ArrayList<packet>>();
+
+ /**
+  * This uses the array list of packets generated from calling insertPacket, and sorts it into 
+  *  a 2-dimensional arrayList, each individual arrayList is responsible for holding a file with a specific
+  * fileID. 
+  */
     public void fileOrganizer(){
             for (packet pack : packets){
-                //System.out.println(pack.data);
 
                 for (int i = 0; i < 256; i++) {
                     // If the current index is within the size of the ArrayList of ArrayLists of packets
                     // and the FileID of the current packet is equal to the FileID of the first packet of the
                     // current packet list, then we insert the current packet into the current packet list
-                    //if(orgPacket.size() > i) System.out.println("Check " + orgPacket.get(i).get(0).FileID + " vs " + pack.FileID);
                     if(orgPacket.size() > i && orgPacket.get(i).get(0).FileID == pack.FileID){
                         orgPacket.get(i).add(pack);
                         break;
@@ -49,16 +53,14 @@ public class PackageManager {
             }
     }
 
-
+    /**
+     * This uses the 2-dimensional arrayList made from fileOrganizer and organizes the contents
+     * of each individual file. It uses the packetComparator defined below, which just compares packetNumbers
+     * with the exception that headerPackets are always smaller than dataPackets.
+     */
     public void packetOrganizer(){
         for (ArrayList<packet> arrayList : orgPacket) {
             arrayList.sort(new packetComparator());
-        }
-        for (ArrayList<packet> arrayList : orgPacket) {
-            System.out.println("Start of a packet...");
-            for (int i = 0; i < arrayList.size(); i++) {
-                System.out.println(arrayList.get(i).packetNumber);
-            }
         }
     }
 }
@@ -82,41 +84,31 @@ class packetComparator implements Comparator<packet> {
 class headerPacket extends packet{
     
 
-    headerPacket(byte[] packet){
-        data = new byte[packet.length - 2];
+    headerPacket(byte[] packet, int dataLength){
+        data = new byte[dataLength - 2];
         int index = 0;
-        for (int i = 2; i < packet.length; ++i){
+        for (int i = 2; i < dataLength; ++i){
             data[index++] = packet[i];
         }
         FileID = packet[1];
-
         fileName = (new String(data, 0, data.length)).replaceAll("\0", "");
-
-        System.out.println("Name : |" + fileName + "| length : " + fileName.length() + " --------------------------------");
     }
 }
 
 class dataPacket extends packet{
-    dataPacket(byte[] packet){
+    dataPacket(byte[] packet, int dataLength){
         int index = 0;
-        data = new byte[packet.length - 4];
-        for (int i = 4; i < packet.length; ++i){
+        data = new byte[dataLength - 4];
+        for (int i = 4; i < dataLength; ++i){
             data[index++] = packet[i];
         }
-        //data = packet.getData();
         FileID = packet[1];
         packetNumber = 256*Byte.toUnsignedInt(packet[2]) + Byte.toUnsignedInt(packet[3]);
-        //System.out.println(packetNumber);
         if((3&packet[0]) == 3) {
-         //   PackageManager.totalPackets = packetNumber;
-         System.out.println(packetNumber);
          PackageManager.tempPackets += packetNumber + 2;
-         System.out.println("tempPackets : " + PackageManager.tempPackets);
-         System.out.println("totalPackets : " + PackageManager.totalPackets);
             ++PackageManager.numend;
             if(PackageManager.numend == 3){
                PackageManager.totalPackets = PackageManager.tempPackets;
-               System.out.println("totalPackets : " + PackageManager.totalPackets);
             }
         }
     }

@@ -1,14 +1,9 @@
 package segmentedfilesystem;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.PrintStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 
 
@@ -49,31 +44,37 @@ public class FileRetriever {
         // ways.
 
         try {
+        // We make a DatagramSocket that is set as specified information that was declared before we made it.
         DatagramSocket socket = new DatagramSocket();
         DatagramPacket packet = new DatagramPacket(sendBuf, sendBuf.length, server, port);
         socket.send(packet);
+        // we make potato our instance of PackageManager that will be used to call the methods and information form that class.
         PackageManager potato = new PackageManager();
-
-        while(PackageManager.totalPackets == 0 || potato.packets.size() < PackageManager.totalPackets){ // I think this is still inaccurate
+        //we have the client loop through receiving info from the server until the package manager declares that we have all packets
+        while(PackageManager.totalPackets == 0 || potato.packets.size() < PackageManager.totalPackets){ 
+        // create a DatagramPacket to act as our packets that we receive from the server
         packet = new DatagramPacket(receiveBuf, receiveBuf.length);
         socket.receive(packet);
+        // inserts the new created packet into an arrayList 
         potato.insertPacket(packet);
         receiveBuf = new byte[1028];
         }
         socket.close();
+        //organizes the arraylist into a 2-dimensional arraylist where they are sorted by fileID
         potato.fileOrganizer();
+        //this organizes the 2-dimensional arraylist in the individual arrayLists by packet number
         potato.packetOrganizer();
         for (int i = 0; i < potato.orgPacket.size(); i++) {
+                // creates an arrayList of packets from a particular FileID
                 ArrayList<packet> dPackets=potato.orgPacket.get(i);
+                // Grabs that FileID
                 String file = dPackets.get(0).fileName;
-                
-                //Path path = Paths.get(file);
-                //new String(dPackets.get(0).data, 0, dPackets.get(0).data.length)
-                //File newFile = new File(new String(potato.orgPacket.get(i).get(0).data, 0, potato.orgPacket.get(i).get(0).data.length));
+                // makes a new file based on the FileID
                 File newFile = new File(file);
+                // Sets the standard output to write out onto the file
                 System.setOut(new PrintStream(newFile));
                 for (int j = 1; j < potato.orgPacket.get(i).size(); j++) {
-                        //Files.write(path, potato.orgPacket.get(i).get(j).data);
+                        //loops through the arrayList and writes the data to the file
                         System.out.write(potato.orgPacket.get(i).get(j).data);
                         System.out.flush();
                         }

@@ -1,7 +1,5 @@
 package segmentedfilesystem;
 
-import java.util.ArrayList;
-
 public class Main {
 
     // If there's one command line argument, it is assumed to
